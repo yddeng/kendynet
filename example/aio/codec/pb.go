@@ -69,6 +69,7 @@ func (this *PBReceiver) OnClose() {
 }
 
 func (this *PBReceiver) OnRecvOk(s kendynet.StreamSession, buff []byte) {
+	//fmt.Println("OnRecvOk", len(buff))
 	if nil == this.buffer {
 		this.buffer = buff
 		this.r = 0
@@ -82,7 +83,7 @@ func (this *PBReceiver) OnRecvOk(s kendynet.StreamSession, buff []byte) {
 			copy(newBuffer, this.buffer[:this.w])
 			this.buffer = newBuffer
 		}
-		copy(this.buffer[:this.w], buff)
+		copy(this.buffer[this.w:], buff)
 		this.w += len(buff)
 	}
 	s.(*aio.AioSocket).Recv(nil)
