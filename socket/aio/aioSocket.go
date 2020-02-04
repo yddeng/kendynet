@@ -25,6 +25,7 @@ type AioReceiver interface {
 	ReceiveAndUnpack(kendynet.StreamSession) (interface{}, error)
 	OnRecvOk(kendynet.StreamSession, []byte)
 	StartReceive(kendynet.StreamSession)
+	OnClose()
 }
 
 type defaultReceiver struct {
@@ -49,6 +50,10 @@ func (this *defaultReceiver) ReceiveAndUnpack(s kendynet.StreamSession) (interfa
 
 func (this *defaultReceiver) OnRecvOk(_ kendynet.StreamSession, buff []byte) {
 	this.bytes = len(buff)
+}
+
+func (this *defaultReceiver) OnClose() {
+
 }
 
 type AioSocket struct {
@@ -95,8 +100,19 @@ func NewAioSocket(netConn net.Conn) *AioSocket {
 	return s
 }
 
-func (this *AioSocket) dosend() {
+func (this *AioSocket) trySend() {
 	this.muW.Lock()
+
+	if this.pendingSend.Len() == 0 {
+		this.sendLock = false
+		onClearSendQueue := this.onClearSendQueue
+		this.muW.Unlock()
+		if nil != onClearSendQueue {
+			onClearSendQueue()
+		}
+		return
+	}
+
 	c := 0
 	totalSize := 0
 	for v := this.pendingSend.Front(); v != nil; v = this.pendingSend.Front() {
@@ -118,19 +134,8 @@ func (this *AioSocket) dosend() {
 
 func (this *AioSocket) onSendComplete(r *aiogo.CompleteEvent) {
 	if nil == r.Err {
-		this.muW.Lock()
-		if this.pendingSend.Len() == 0 {
-			this.sendLock = false
-			onClearSendQueue := this.onClearSendQueue
-			this.muW.Unlock()
-			if nil != onClearSendQueue {
-				onClearSendQueue()
-			}
-		} else {
-			this.muW.Unlock()
-			this.aioConn.PostClosure(this.dosend)
-			//this.dosend()
-		}
+		this.aioConn.PostClosure(this.trySend)
+		//this.trySend()
 	} else {
 		flag := this.getFlag()
 		if !(flag&closed > 0) {
@@ -261,11 +266,7 @@ func (this *AioSocket) sendMessage(msg kendynet.Message) error {
 	}
 
 	if send {
-		this.aioConn.PostClosure(this.dosend)
-		//this.wcompleteQueue.Post(&aiogo.CompleteEvent{
-		//	Type: aiogo.User,
-		//	Ud:   this.dosend,
-		//})
+		this.aioConn.PostClosure(this.trySend)
 	}
 	return nil
 }
@@ -284,6 +285,7 @@ func (this *AioSocket) doClose() {
 	this.Lock()
 	onClose := this.onClose
 	this.Unlock()
+	this.receiver.OnClose()
 	if nil != onClose {
 		onClose(this, this.closeReason)
 	}

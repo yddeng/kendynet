@@ -62,6 +62,12 @@ func (this *PBReceiver) StartReceive(s kendynet.StreamSession) {
 	s.(*aio.AioSocket).Recv(nil)
 }
 
+func (this *PBReceiver) OnClose() {
+	if nil != this.buffer && this.isPoolBuffer {
+		this.pool.Put(this.buffer)
+	}
+}
+
 func (this *PBReceiver) OnRecvOk(s kendynet.StreamSession, buff []byte) {
 	if nil == this.buffer {
 		this.buffer = buff
