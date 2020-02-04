@@ -49,7 +49,6 @@ type PBReceiver struct {
 	maxMsgSize   int
 	w            int
 	r            int
-	firstRecv    bool
 }
 
 func NewPBReceiver(pool *BufferPool, maxMsgSize int) *PBReceiver {
@@ -57,6 +56,10 @@ func NewPBReceiver(pool *BufferPool, maxMsgSize int) *PBReceiver {
 	receiver.maxMsgSize = maxMsgSize
 	receiver.pool = pool
 	return receiver
+}
+
+func (this *PBReceiver) StartReceive() {
+	s.(*AioSocket).Recv(nil)
 }
 
 func (this *PBReceiver) OnRecvOk(s kendynet.StreamSession, buff []byte) {
@@ -76,7 +79,7 @@ func (this *PBReceiver) OnRecvOk(s kendynet.StreamSession, buff []byte) {
 		copy(this.buffer[:this.w], buff)
 		this.w += len(buff)
 	}
-	s.(*aio.AioSocket).Recv(nil)
+	//s.(*aio.AioSocket).Recv(nil)
 }
 
 func (this *PBReceiver) unPack() (interface{}, error) {
@@ -88,40 +91,37 @@ func (this *PBReceiver) unPack() (interface{}, error) {
 }
 
 func (this *PBReceiver) ReceiveAndUnpack(s kendynet.StreamSession) (interface{}, error) {
-
-	if !this.firstRecv {
-		//由框架发起第一次recv
-		s.(*aio.AioSocket).Recv(nil)
-		this.firstRecv = true
-		return nil, nil
-	}
-
 	if nil == this.buffer {
 		return nil, nil
 	}
 
 	msg, err := this.unPack()
-	if msg == nil || nil != err {
-		if this.isPoolBuffer {
-			this.pool.Put(this.buffer)
-		}
-		this.buffer = nil
-		this.r = 0
-		this.w = 0
-	}
 
-	if nil == msg && nil == err {
-		if this.r != this.w {
-			if this.isPoolBuffer {
-				newBuffer := make([]byte, this.maxMsgSize+int(pb.PBHeaderSize))
-				copy(newBuffer, this.buffer[this.r:this.w])
-				this.buffer = newBuffer
-				this.isPoolBuffer = false
+	if msg == nil {
+		if nil == err {
+			if this.r != this.w {
+				if this.isPoolBuffer {
+					newBuffer := make([]byte, this.maxMsgSize+int(pb.PBHeaderSize))
+					copy(newBuffer, this.buffer[this.r:this.w])
+					this.buffer = newBuffer
+					this.isPoolBuffer = false
+				} else {
+					copy(this.buffer, this.buffer[this.r:this.w])
+				}
+				this.w = this.w - this.r
+				this.r = 0
 			} else {
-				copy(this.buffer, this.buffer[this.r:this.w])
+				s.(*aio.AioSocket).Recv(nil)
 			}
-			this.w = this.w - this.r
+		}
+
+		if nil != err || this.r == this.w {
+			if this.isPoolBuffer {
+				this.pool.Put(this.buffer)
+			}
+			this.buffer = nil
 			this.r = 0
+			this.w = 0
 		}
 	}
 	return msg, err

@@ -24,11 +24,16 @@ const (
 type AioReceiver interface {
 	ReceiveAndUnpack(kendynet.StreamSession) (interface{}, error)
 	OnRecvOk(kendynet.StreamSession, []byte)
+	StartReceive(kendynet.StreamSession)
 }
 
 type defaultReceiver struct {
 	bytes  int
 	buffer []byte
+}
+
+func (this *defaultReceiver) StartReceive() {
+	s.(*AioSocket).Recv(this.buffer)
 }
 
 func (this *defaultReceiver) ReceiveAndUnpack(s kendynet.StreamSession) (interface{}, error) {
@@ -420,7 +425,7 @@ func (this *AioSocket) Start(eventCB func(*kendynet.Event)) error {
 		return err
 	} else {
 		//发起第一个recv
-		this.receiver.ReceiveAndUnpack(this)
+		this.receiver.StartReceive(this)
 		return nil
 	}
 }
