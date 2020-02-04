@@ -127,15 +127,14 @@ func (this *AioSocket) trySend() {
 
 	this.muW.Unlock()
 
-	if c > 0 {
-		this.aioConn.SendBuffers(this.sendBuffs[:c], this, this.wcompleteQueue)
-	}
+	this.aioConn.SendBuffers(this.sendBuffs[:c], this, this.wcompleteQueue)
+
 }
 
 func (this *AioSocket) onSendComplete(r *aiogo.CompleteEvent) {
 	if nil == r.Err {
-		this.aioConn.PostClosure(this.trySend)
-		//this.trySend()
+		//this.aioConn.PostClosure(this.trySend)
+		this.trySend()
 	} else {
 		flag := this.getFlag()
 		if !(flag&closed > 0) {
