@@ -32,7 +32,7 @@ type defaultReceiver struct {
 	buffer []byte
 }
 
-func (this *defaultReceiver) StartReceive() {
+func (this *defaultReceiver) StartReceive(s kendynet.StreamSession) {
 	s.(*AioSocket).Recv(this.buffer)
 }
 
