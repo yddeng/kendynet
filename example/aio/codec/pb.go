@@ -59,7 +59,7 @@ func NewPBReceiver(pool *BufferPool, maxMsgSize int) *PBReceiver {
 }
 
 func (this *PBReceiver) StartReceive(s kendynet.StreamSession) {
-	s.(*AioSocket).Recv(nil)
+	s.(*aiogo.AioSocket).Recv(nil)
 }
 
 func (this *PBReceiver) OnRecvOk(s kendynet.StreamSession, buff []byte) {
