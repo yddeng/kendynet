@@ -3,7 +3,7 @@
 package aio
 
 import (
-	"bytes"
+	//"bytes"
 	"container/list"
 	"github.com/sniperHW/aiogo"
 	"github.com/sniperHW/kendynet"
@@ -114,7 +114,7 @@ func (this *AioSocket) trySend() {
 		return
 	}
 
-	/*c := 0
+	c := 0
 	totalSize := 0
 	for v := this.pendingSend.Front(); v != nil; v = this.pendingSend.Front() {
 		this.pendingSend.Remove(v)
@@ -124,8 +124,9 @@ func (this *AioSocket) trySend() {
 		if c >= len(this.sendBuffs) || totalSize >= this.maxPostSendSize {
 			break
 		}
-	}*/
-	var sendBuff bytes.Buffer
+	}
+
+	/*var sendBuff bytes.Buffer
 	for v := this.pendingSend.Front(); v != nil; v = this.pendingSend.Front() {
 		this.pendingSend.Remove(v)
 
@@ -133,19 +134,19 @@ func (this *AioSocket) trySend() {
 		if sendBuff.Len() >= 128*1024 {
 			break
 		}
-	}
+	}*/
 
 	this.muW.Unlock()
 
-	//this.aioConn.SendBuffers(this.sendBuffs[:c], this, this.wcompleteQueue)
-	this.aioConn.Send(sendBuff.Bytes(), this, this.wcompleteQueue)
+	this.aioConn.SendBuffers(this.sendBuffs[:c], this, this.wcompleteQueue)
+	//this.aioConn.Send(sendBuff.Bytes(), this, this.wcompleteQueue)
 
 }
 
 func (this *AioSocket) onSendComplete(r *aiogo.CompleteEvent) {
 	if nil == r.Err {
-		this.aioConn.PostClosure(this.trySend)
-		//this.trySend()
+		//this.aioConn.PostClosure(this.trySend)
+		this.trySend()
 	} else {
 		flag := this.getFlag()
 		if !(flag&closed > 0) {
