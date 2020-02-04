@@ -58,7 +58,7 @@ func NewPBReceiver(pool *BufferPool, maxMsgSize int) *PBReceiver {
 	return receiver
 }
 
-func (this *PBReceiver) StartReceive() {
+func (this *PBReceiver) StartReceive(s kendynet.StreamSession) {
 	s.(*AioSocket).Recv(nil)
 }
 
