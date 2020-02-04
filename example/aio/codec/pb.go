@@ -79,7 +79,7 @@ func (this *PBReceiver) OnRecvOk(s kendynet.StreamSession, buff []byte) {
 		copy(this.buffer[:this.w], buff)
 		this.w += len(buff)
 	}
-	//s.(*aio.AioSocket).Recv(nil)
+	s.(*aio.AioSocket).Recv(nil)
 }
 
 func (this *PBReceiver) unPack() (interface{}, error) {
@@ -110,9 +110,9 @@ func (this *PBReceiver) ReceiveAndUnpack(s kendynet.StreamSession) (interface{},
 				}
 				this.w = this.w - this.r
 				this.r = 0
-			} else {
+			} /* else {
 				s.(*aio.AioSocket).Recv(nil)
-			}
+			}*/
 		}
 
 		if nil != err || this.r == this.w {
