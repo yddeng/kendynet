@@ -3,7 +3,6 @@
 package aio
 
 import (
-	//"bytes"
 	"container/list"
 	"github.com/sniperHW/aiogo"
 	"github.com/sniperHW/kendynet"
@@ -126,21 +125,9 @@ func (this *AioSocket) trySend() {
 		}
 	}
 
-	/*var sendBuff bytes.Buffer
-	for v := this.pendingSend.Front(); v != nil; v = this.pendingSend.Front() {
-		this.pendingSend.Remove(v)
-
-		sendBuff.Write(v.Value.(kendynet.Message).Bytes())
-		if sendBuff.Len() >= 128*1024 {
-			break
-		}
-	}*/
-
 	this.muW.Unlock()
 
 	this.aioConn.SendBuffers(this.sendBuffs[:c], this, this.wcompleteQueue)
-	//this.aioConn.Send(sendBuff.Bytes(), this, this.wcompleteQueue)
-
 }
 
 func (this *AioSocket) onSendComplete(r *aiogo.CompleteEvent) {
