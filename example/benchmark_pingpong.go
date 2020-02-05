@@ -11,6 +11,8 @@ import (
 	"os/signal"
 	"runtime"
 	//"runtime/pprof"
+	"net/http"
+	_ "net/http/pprof"
 	"strconv"
 	"sync/atomic"
 	"syscall"
@@ -18,6 +20,10 @@ import (
 )
 
 func server(service string) {
+
+	go func() {
+		http.ListenAndServe("0.0.0.0:6060", nil)
+	}()
 
 	clientcount := int32(0)
 	bytescount := int32(0)

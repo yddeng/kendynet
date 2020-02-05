@@ -12,11 +12,17 @@ import (
 	"sync/atomic"
 	//"syscall"
 	"github.com/sniperHW/kendynet/golog"
+	"net/http"
+	_ "net/http/pprof"
 	"strconv"
 	"time"
 )
 
 func server(service string) {
+
+	go func() {
+		http.ListenAndServe("0.0.0.0:6060", nil)
+	}()
 
 	clientcount := int32(0)
 	bytescount := int32(0)
